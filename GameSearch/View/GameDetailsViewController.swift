@@ -10,36 +10,54 @@ import UIKit
 
 class GameDetailsViewController: UIViewController {
   
-  @IBOutlet weak var detailDescriptionLabel: UILabel!
+  // MARK: - IBOutlets
+  @IBOutlet private weak var releaseDateLabel: UILabel!
+  @IBOutlet private weak var nameLabel: UILabel!
+  @IBOutlet private weak var gameImageView: UIImageView!
+  @IBOutlet private weak var gameImageSpinner: UIActivityIndicatorView!
+  @IBOutlet private weak var descriptionTextView: UITextView!
   
   
+  // MARK: - Public Instance Attributes
+  var game: Game!
+  
+  
+  // MARK: - LifeCycle
+  override func viewDidLoad() {
+    super.viewDidLoad()
+    clearView()
+    configureView()
+  }
+}
+
+
+// MARK: - Private Instance Methods
+extension GameDetailsViewController {
   func configureView() {
-    // Update the user interface for the detail item.
-    if let detail = detailItem {
-      if let label = detailDescriptionLabel {
-        label.text = detail.description
+    guard let game = game else { return }
+    releaseDateLabel.text = game.releaseDate?.toString() ?? "unknown"
+    nameLabel.text = game.name
+    descriptionTextView.text = game.gameDescription ?? ""
+    // @TODO: Added just for debugging
+//    for _ in 0...50 {
+//      descriptionTextView.text = descriptionTextView.text! + (game.gameDescription ?? "")
+//    }
+    gameImageSpinner.startAnimating()
+    DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+      self?.game.downloadImage(small: false) { image in
+        DispatchQueue.main.async {
+          self?.gameImageView.image = image ?? #imageLiteral(resourceName: "gameplaceholder")
+          self?.gameImageSpinner.stopAnimating()
+        }
       }
     }
   }
   
-  override func viewDidLoad() {
-    super.viewDidLoad()
-    // Do any additional setup after loading the view, typically from a nib.
-    configureView()
+  func clearView() {
+    releaseDateLabel.text = nil
+    nameLabel.text = nil
+    gameImageView.image = #imageLiteral(resourceName: "gameplaceholder")
+    descriptionTextView.text = ""
+    gameImageSpinner.stopAnimating()
   }
-  
-  override func didReceiveMemoryWarning() {
-    super.didReceiveMemoryWarning()
-    // Dispose of any resources that can be recreated.
-  }
-  
-  var detailItem: NSDate? {
-    didSet {
-      // Update the view.
-      configureView()
-    }
-  }
-  
-  
 }
-

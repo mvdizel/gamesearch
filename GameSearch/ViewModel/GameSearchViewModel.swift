@@ -17,6 +17,7 @@ final class GameSearchViewModel {
   var startUpdating = DynamicBinder<Void>(())
   var endUpdating = DynamicBinder<Void>(())
   var searchError = DynamicBinder<String?>(nil)
+  var noMoreGames = DynamicBinder<Void>(())
   var numberOfRows: Int {
     return games.count
   }
@@ -26,9 +27,12 @@ final class GameSearchViewModel {
   private var games: [Game] = []
   private var currentPage: Int = 0
   private var currentQuery: String?
-  
-  
-  // MARK: - Public Instance Attributes
+  private var isLastPage: Bool = false
+}
+
+
+// MARK: - Public Instance Attributes
+extension GameSearchViewModel {
   func searchGames(_ query: String?, forNewPage: Bool = false) {
     guard let query = query, !query.isEmpty else {
       currentQuery = nil
@@ -36,17 +40,22 @@ final class GameSearchViewModel {
       removeAllGames()
       return
     }
+    guard !(isLastPage && forNewPage) else {
+      noMoreGames.fire()
+      return
+    }
+    isLastPage = false
     currentQuery = query
     let currentPage = forNewPage ? self.currentPage + 1 : 1
     self.currentPage = currentPage
-    NetworkManager.shared.searchGames(query, page: currentPage, success: { [weak self] games in
+    NetworkManager.shared.searchGames(query, page: currentPage, success: { [weak self] games, isLastPage in
       guard let strongSelf = self, strongSelf.currentQuery == query else {
         return
       }
       if currentPage == strongSelf.currentPage {
         strongSelf.currentQuery = nil
       }
-      strongSelf.add(games, for: currentPage)
+      strongSelf.add(games, for: currentPage, isLastPage)
     }, failure: { [weak self] error in
       self?.searchError.value = "No more games"
     })
@@ -58,9 +67,11 @@ final class GameSearchViewModel {
     }
     return games[index]
   }
-  
-  
-  // MARK: - Private Instance Attributes
+}
+
+
+// MARK: - Private Instance Attributes
+private extension GameSearchViewModel {
   private func removeAllGames() {
     startUpdating.fire()
     deleteGamesAt.value = games.enumerated().map({ $0.offset })
@@ -68,7 +79,8 @@ final class GameSearchViewModel {
     endUpdating.fire()
   }
   
-  private func add(_ newGames: [Game], for page: Int) {
+  private func add(_ newGames: [Game], for page: Int, _ isLastPage: Bool) {
+    self.isLastPage = isLastPage
     guard page <= 1 || !newGames.isEmpty else {
       removeAllGames()
       return

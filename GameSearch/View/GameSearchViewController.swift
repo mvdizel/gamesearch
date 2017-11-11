@@ -33,21 +33,18 @@ class GameSearchViewController: UIViewController {
     setup()
   }
   
-  override func viewWillAppear(_ animated: Bool) {
-    super.viewWillAppear(animated)
-  }
-  
   
   // MARK: - Segues
   override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-    if segue.identifier == "showDetail" {
-      if let indexPath = tableView.indexPathForSelectedRow {
-        let object = objects[indexPath.row] as! NSDate
-        let controller = (segue.destination as! UINavigationController).topViewController as! GameDetailsViewController
-        controller.detailItem = object
-        controller.navigationItem.leftBarButtonItem = splitViewController?.displayModeButtonItem
-        controller.navigationItem.leftItemsSupplementBackButton = true
+    if segue.identifier == "showDetailsSegue" {
+      guard let indexPath = tableView.indexPathForSelectedRow,
+        let game = viewModel.game(at: indexPath.row),
+        let controller = (segue.destination as! UINavigationController).topViewController as? GameDetailsViewController else {
+          return
       }
+      controller.game = game
+      controller.navigationItem.leftBarButtonItem = splitViewController?.displayModeButtonItem
+      controller.navigationItem.leftItemsSupplementBackButton = true
     }
   }
 }
@@ -96,6 +93,12 @@ extension GameSearchViewController: UITableViewDelegate {
   func tableView(_ tableView: UITableView, canEditRowAt indexPath: IndexPath) -> Bool {
     return false
   }
+  
+  func tableView(_ tableView: UITableView, willDisplay cell: UITableViewCell, forRowAt indexPath: IndexPath) {
+    guard indexPath.row == viewModel.numberOfRows - 2 else { return }
+    SVProgressHUD.show()
+    viewModel.searchGames(searchTextField.text, forNewPage: true)
+  }
 }
 
 
@@ -103,6 +106,7 @@ extension GameSearchViewController: UITableViewDelegate {
 private extension GameSearchViewController {
   func setup() {
     noResultsLabel.isHidden = true
+    tableView.keyboardDismissMode = .onDrag
     viewModel.startUpdating.bind(with: self) { [weak self] _ in
       self?.tableView.beginUpdates()
     }
@@ -128,6 +132,12 @@ private extension GameSearchViewController {
       }
     }
     viewModel.searchError.bind(with: self) { [weak self] error in
+      DispatchQueue.main.async {
+        self?.showNoResultsLabel()
+        SVProgressHUD.dismiss()
+      }
+    }
+    viewModel.noMoreGames.bind(with: self) { [weak self] _ in
       DispatchQueue.main.async {
         self?.showNoResultsLabel()
         SVProgressHUD.dismiss()

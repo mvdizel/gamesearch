@@ -42,10 +42,12 @@ extension GameTableViewCell {
     gameDescriptionLabel.text = game.gameDescription
     gameReleaseDateLabel.text = game.releaseDate?.toString()
     gameImageViewSpinner.startAnimating()
-    game.downloadImage(small: true) { [weak self] image in
-      DispatchQueue.main.async {
-        self?.gameImageView.image = image ?? #imageLiteral(resourceName: "gameplaceholder")
-        self?.gameImageViewSpinner.stopAnimating()
+    DispatchQueue.global(qos: .userInitiated).async { [weak self] in
+      game.downloadImage(small: true) { image in
+        DispatchQueue.main.async {
+          self?.gameImageView.image = image ?? #imageLiteral(resourceName: "gameplaceholder")
+          self?.gameImageViewSpinner.stopAnimating()
+        }
       }
     }
   }

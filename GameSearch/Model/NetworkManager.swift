@@ -11,6 +11,7 @@ import Alamofire
 
 private let baseUrl = "https://www.giantbomb.com/api/search/"
 private let apiKey = "86675b4a78e57ff2405a7b68654f89ffecb8efc3"
+private let recordsLimit = 20
 
 final class NetworkManager {
   
@@ -23,12 +24,12 @@ final class NetworkManager {
   
   
   // MARK: - Public Instance Methods
-  func searchGames(_ query: String, page: Int, success: @escaping ([Game]) -> Void, failure: @escaping (Error?) -> Void) {
+  func searchGames(_ query: String, page: Int, success: @escaping ([Game], Bool) -> Void, failure: @escaping (Error?) -> Void) {
     let parameters: [String: Any] = [
       "api_key": apiKey,
       "format": "json",
       "page": page,
-      "limit": "20",
+      "limit": recordsLimit,
       "query": query,
       "resources": "game",
       "field_list": "name,deck,id,image,original_release_date,small_url"
@@ -49,12 +50,13 @@ final class NetworkManager {
         }
         games.append(game)
       }
-      guard !games.isEmpty else {
-        failure(nil)
-        return
-      }
       games.forEach { debugPrint("- \($0)") }
-      success(games)
+      var isLastPage = true
+      if let total = jsonResult["number_of_total_results"] as? Int,
+         let offset = jsonResult["number_of_page_results"] as? Int {
+        isLastPage = (total - offset) <= recordsLimit
+      }
+      success(games, isLastPage)
     }
   }
   
