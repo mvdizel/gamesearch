@@ -31,7 +31,7 @@ final class NetworkManager {
       "limit": "20",
       "query": query,
       "resources": "game",
-      "field_list": "name,deck,id,image,original_release_date"
+      "field_list": "name,deck,id,image,original_release_date,small_url"
     ]
     let request = Alamofire.request(baseUrl, method: .get, parameters: parameters)
     request.responseJSON { (response: DataResponse<Any>) in
@@ -56,5 +56,12 @@ final class NetworkManager {
       games.forEach { debugPrint("- \($0)") }
       success(games)
     }
+  }
+  
+  func getData(from url: String, completion: @escaping (Data?, URLResponse?, Error?) -> ()) {
+    let url = URL(string: url)!
+    URLSession.shared.dataTask(with: url) { data, response, error in
+      completion(data, response, error)
+    }.resume()
   }
 }

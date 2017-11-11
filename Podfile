@@ -7,5 +7,6 @@ target 'GameSearch' do
     
     pod 'Alamofire'
   	pod 'DynamicBinder'
+  	pod 'SVProgressHUD'
     
 end

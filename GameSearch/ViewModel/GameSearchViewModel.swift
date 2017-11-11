@@ -17,6 +17,9 @@ final class GameSearchViewModel {
   var startUpdating = DynamicBinder<Void>(())
   var endUpdating = DynamicBinder<Void>(())
   var searchError = DynamicBinder<String?>(nil)
+  var numberOfRows: Int {
+    return games.count
+  }
   
   
   // MARK: - Private Instance Attributes
@@ -27,7 +30,7 @@ final class GameSearchViewModel {
   
   // MARK: - Public Instance Attributes
   func searchGames(_ query: String?, forNewPage: Bool = false) {
-    guard let query = query else {
+    guard let query = query, !query.isEmpty else {
       currentQuery = nil
       self.currentPage = 0
       removeAllGames()
@@ -50,7 +53,7 @@ final class GameSearchViewModel {
   }
   
   func game(at index: Int) -> Game? {
-    guard index > 0, index < games.count else {
+    guard index >= 0, index < games.count else {
       return nil
     }
     return games[index]
@@ -66,13 +69,13 @@ final class GameSearchViewModel {
   }
   
   private func add(_ newGames: [Game], for page: Int) {
-    guard page == 0 || !newGames.isEmpty else {
-      searchError.value = "No more games"
+    guard page <= 1 || !newGames.isEmpty else {
+      removeAllGames()
       return
     }
-    let startIndex = page == 0 ? 0 : games.endIndex
+    let startIndex = page <= 1 ? 0 : games.endIndex
     startUpdating.fire()
-    if page == 0, !games.isEmpty {
+    if page <= 1, !games.isEmpty {
       deleteGamesAt.value = games.enumerated().map({ $0.offset })
       games = []
     }
