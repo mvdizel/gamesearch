@@ -14,8 +14,9 @@ class NetworkManagerTests: XCTestCase {
   // MARK: - Functional Tests
   func testSearchGames() {
     let testExpectation = expectation(description: "Search")
-    NetworkManager.shared.searchGames("Halo", page: 1, success: { games in
+    NetworkManager.shared.searchGames("zzz", page: 1, success: { games, isLastPage in
       XCTAssertFalse(games.isEmpty)
+      XCTAssertTrue(isLastPage)
       testExpectation.fulfill()
     }, failure: { _ in
       XCTFail()
